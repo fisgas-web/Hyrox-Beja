@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#111111"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<title>HYROX 26.09</title>
+<style>
+:root {
+  --bg:#0c0c0c; --card:#171717; --muted:#9e9e9e; --text:#f7f7f7;
+  --accent:#d7ff3f; --line:#2c2c2c; --danger:#ff7b7b;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;background:var(--bg);color:var(--text);padding-bottom:90px}
+header{position:sticky;top:0;z-index:10;background:rgba(12,12,12,.94);backdrop-filter:blur(14px);padding:calc(12px + env(safe-area-inset-top)) 18px 12px;border-bottom:1px solid var(--line)}
+.kicker{font-size:12px;color:var(--accent);font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+h1{font-size:26px;line-height:1.05;margin:5px 0 4px}
+.sub{font-size:13px;color:var(--muted)}
+main{padding:18px;max-width:720px;margin:auto}
+.today-card,.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:14px}
+.today-card{border-color:#3d4717;box-shadow:0 0 0 1px rgba(215,255,63,.05)}
+.row{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.badge{display:inline-block;padding:6px 9px;border-radius:999px;background:#242424;color:#ddd;font-size:12px}
+.bigdate{font-size:14px;color:var(--muted);margin-top:5px}
+.workout-title{font-size:24px;font-weight:800;margin:8px 0 12px}
+ul{padding-left:20px;margin:10px 0 0}
+li{margin:8px 0;line-height:1.35}
+.controls{display:flex;gap:8px;margin:14px 0;overflow:auto;padding-bottom:3px}
+button{appearance:none;border:1px solid var(--line);background:#181818;color:white;border-radius:12px;padding:10px 13px;font-weight:700}
+button.active{background:var(--accent);color:#111;border-color:var(--accent)}
+button.complete{width:100%;background:#242424;margin-top:14px}
+button.complete.done{background:var(--accent);color:#111}
+.week-title{font-size:18px;margin:22px 2px 10px}
+.day{display:grid;grid-template-columns:58px 1fr auto;gap:12px;align-items:center;padding:13px 0;border-top:1px solid var(--line);cursor:pointer}
+.day:first-of-type{border-top:0}
+.dow{font-size:12px;color:var(--muted);text-transform:uppercase}
+.dom{font-size:23px;font-weight:800}
+.daytitle{font-weight:700}
+.daymeta{font-size:12px;color:var(--muted);margin-top:3px}
+.check{font-size:20px;color:var(--accent)}
+.hidden{display:none}
+.progress-wrap{height:8px;background:#252525;border-radius:99px;overflow:hidden;margin-top:12px}
+.progress{height:100%;background:var(--accent);width:0}
+.footer-nav{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(12,12,12,.96);border-top:1px solid var(--line);display:flex;gap:8px;justify-content:center}
+.footer-nav button{flex:1;max-width:220px}
+.note{color:var(--muted);font-size:12px;line-height:1.4;margin-top:10px}
+.race{border-color:var(--accent);box-shadow:0 0 0 1px rgba(215,255,63,.15)}
+@media (prefers-color-scheme: light){
+  :root{--bg:#f6f6f6;--card:#fff;--text:#111;--muted:#666;--line:#ddd;--accent:#b7df00}
+  header,.footer-nav{background:rgba(246,246,246,.94)} button{background:#fff;color:#111} button.complete{background:#eee}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="kicker">HYROX TRAINING</div>
+  <h1>26 Setembro 2026</h1>
+  <div class="sub">Objetivo corrida HYROX: 4:20/km</div>
+  <div class="progress-wrap"><div class="progress" id="progress"></div></div>
+</header>
+
+<main>
+<section id="todayView"></section>
+<section id="calendarView" class="hidden"></section>
+</main>
+
+<div class="footer-nav">
+  <button id="btnToday" class="active" onclick="showToday()">Hoje</button>
+  <button id="btnPlan" onclick="showPlan()">Plano</button>
+</div>
+
+<script>
+const PLAN = [{"date": "2026-08-10", "week": "Semana 1", "title": "VO₂ Max (início da semana)", "type": "run", "details": ["2 km aquecimento", "6×800 m @ 4:30–4:35/km", "Recuperação 2 min", "2 km cooldown"]}, {"date": "2026-08-11", "week": "Semana 1", "title": "Força HYROX", "type": "strength", "details": ["Aquecimento: 5 min SkiErg/bike + mobilidade anca/tornozelo + ativação", "Deadlift: 4×5 @ RPE 7–8", "Front Squat: 4×6 @ RPE 7", "Sled Push: 5×15 m pesado", "Sled Pull: 4×20 m pesado", "Walking Lunges: 3×20 passos", "Farmer Carry: 4×50 m", "Wall Balls: 5×15", "Core: Pallof Press 3×12/lado + Hollow Hold 3×30–40 s", "Final: 3×1 km @ 4:50–4:55/km, rec. 90 s"]}, {"date": "2026-08-12", "week": "Semana 1", "title": "Corrida fácil Z2", "type": "run", "details": ["10–12 km em Zona 2", "Ritmo indicativo: 5:35–5:55/km", "Manter esforço confortável e conversacional", "Complementar: gémeos, sóleo, tibial anterior e mobilidade"]}, {"date": "2026-08-13", "week": "Semana 1", "title": "Threshold", "type": "run", "details": ["2 km aquecimento", "6 km @ 4:50–4:55/km", "1–2 km cooldown"]}, {"date": "2026-08-14", "week": "Semana 1", "title": "Recuperação", "type": "recovery", "details": ["Descanso OU 40–45 min bicicleta fácil Z1/Z2", "Mobilidade tornozelo e anca", "Foam roller leve"]}, {"date": "2026-08-15", "week": "Semana 1", "title": "HYROX 75–80%", "type": "hyrox", "details": ["1 km @ 4:45/km → 750 m SkiErg", "1 km @ 4:45/km → 40 m Sled Push", "1 km @ 4:45/km → 40 m Sled Pull", "1 km @ 4:45/km → 60 m Burpee Broad Jumps", "1 km @ 4:45/km → 750 m Row", "1 km @ 4:45/km → 150 m Farmer Carry", "75 m Sandbag Lunges", "60 Wall Balls"]}, {"date": "2026-08-16", "week": "Semana 1", "title": "Long Run", "type": "run", "details": ["14–16 km em Z2", "Ritmo confortável: aproximadamente 5:35–5:50/km", "Sem final agressivo nesta semana"]}, {"date": "2026-08-17", "week": "Semana 2", "title": "VO₂ Max", "type": "run", "details": ["2 km aquecimento", "Mobilidade + 6×80 m progressivos", "5×1000 m @ 4:25–4:30/km", "Recuperação: 2 min", "2 km cooldown"]}, {"date": "2026-08-18", "week": "Semana 2", "title": "Força HYROX", "type": "strength", "details": ["Deadlift: 4×5 @ RPE 7–8", "Front Squat: 4×6 @ RPE 7", "Sled Push: 5×15 m pesado", "Sled Pull: 4×20 m pesado", "Walking Lunges: 3×20 passos", "Farmer Carry: 4×50 m", "Wall Balls: 5×15", "Core: Pallof Press + Hollow Hold", "Final: 3×1 km @ 4:50/km, rec. 90 s"]}, {"date": "2026-08-19", "week": "Semana 2", "title": "Corrida fácil Z2", "type": "run", "details": ["10–12 km Z2", "Ritmo indicativo: 5:35–5:55/km", "Complementar Aquiles/gémeos + mobilidade"]}, {"date": "2026-08-20", "week": "Semana 2", "title": "Threshold", "type": "run", "details": ["2 km aquecimento", "7–8 km @ 4:45–4:50/km", "1–2 km cooldown"]}, {"date": "2026-08-21", "week": "Semana 2", "title": "Recuperação", "type": "recovery", "details": ["Descanso OU 40–45 min bicicleta fácil", "Mobilidade + foam roller leve"]}, {"date": "2026-08-22", "week": "Semana 2", "title": "HYROX 75–80%", "type": "hyrox", "details": ["1 km @ 4:45/km → 750 m SkiErg", "1 km → 40 m Sled Push", "1 km → 40 m Sled Pull", "1 km → 60 m Burpee Broad Jumps", "1 km → 750 m Row", "1 km → 150 m Farmer Carry", "75 m Sandbag Lunges", "60 Wall Balls"]}, {"date": "2026-08-23", "week": "Semana 2", "title": "Long Run", "type": "run", "details": ["14–16 km Z2", "Ritmo controlado", "Se estiveres fresco: últimos 2–3 km perto de 5:00/km"]}, {"date": "2026-08-24", "week": "Semana 3", "title": "VO₂ Max", "type": "run", "details": ["2 km aquecimento", "5×1 km @ 4:20–4:25/km", "Recuperação: 2 min", "2 km cooldown"]}, {"date": "2026-08-25", "week": "Semana 3", "title": "Força HYROX", "type": "strength", "details": ["Deadlift: 5×3 @ RPE 8", "Front Squat: 4×4 @ RPE 8", "Sled Push: 4×25 m @ 110–120% carga de competição", "Sled Pull: 4×25 m @ 110–120%", "Farmer Carry: 4×50 m pesado", "Sandbag Lunges: 3×30 m", "Wall Balls: 4×20", "Final: 3×1 km @ 4:40/km"]}, {"date": "2026-08-26", "week": "Semana 3", "title": "Corrida fácil Z2", "type": "run", "details": ["10 km Z2", "Ritmo confortável", "Complementar Aquiles/gémeos + mobilidade"]}, {"date": "2026-08-27", "week": "Semana 3", "title": "Threshold", "type": "run", "details": ["2 km aquecimento", "8 km @ 4:40–4:45/km", "1–2 km cooldown"]}, {"date": "2026-08-28", "week": "Semana 3", "title": "Recuperação", "type": "recovery", "details": ["Descanso OU bicicleta 40 min muito fácil", "Mobilidade"]}, {"date": "2026-08-29", "week": "Semana 3", "title": "HYROX Race Specific", "type": "hyrox", "details": ["1 km @ 4:35–4:40 → 1000 m SkiErg", "1 km → 50 m Sled Push", "1 km → 50 m Sled Pull", "1 km → 80 m Burpee Broad Jumps", "1 km → 1000 m Row", "1 km → 200 m Farmer Carry", "1 km → 100 m Sandbag Lunges", "1 km → 75–100 Wall Balls", "Intensidade global: 85–90%"]}, {"date": "2026-08-30", "week": "Semana 3", "title": "Long Run", "type": "run", "details": ["14–16 km fácil", "Se o sábado foi muito duro: 12 km Z2"]}, {"date": "2026-08-31", "week": "Semana 4", "title": "VO₂ Max", "type": "run", "details": ["2 km aquecimento", "6×1 km @ 4:20/km", "Recuperação: 90–120 s", "2 km cooldown"]}, {"date": "2026-09-01", "week": "Semana 4", "title": "Força HYROX", "type": "strength", "details": ["Deadlift: 5×3 @ RPE 8", "Front Squat: 4×4 @ RPE 8", "Sled Push: 4×25 m @ 110–120%", "Sled Pull: 4×25 m @ 110–120%", "Farmer Carry: 4×50 m", "Sandbag Lunges: 3×30 m", "Wall Balls: 4×20", "Final: 3×1 km @ 4:30–4:35/km"]}, {"date": "2026-09-02", "week": "Semana 4", "title": "Corrida fácil Z2", "type": "run", "details": ["10 km Z2", "Sem perseguir pace", "Mobilidade + gémeos/sóleo"]}, {"date": "2026-09-03", "week": "Semana 4", "title": "Threshold", "type": "run", "details": ["2 km aquecimento", "8–10 km @ 4:35–4:40/km", "1–2 km cooldown"]}, {"date": "2026-09-04", "week": "Semana 4", "title": "Recuperação", "type": "recovery", "details": ["Descanso", "Opcional: 30–40 min bike Z1/Z2", "Mobilidade leve"]}, {"date": "2026-09-05", "week": "Semana 4", "title": "HYROX Race Specific", "type": "hyrox", "details": ["1 km @ 4:35–4:40 → 1000 m SkiErg", "1 km → 50 m Sled Push", "1 km → 50 m Sled Pull", "1 km → 80 m Burpee Broad Jumps", "1 km → 1000 m Row", "1 km → 200 m Farmer Carry", "1 km → 100 m Sandbag Lunges", "1 km → 75–100 Wall Balls", "Não transformar em prova: 85–90%"]}, {"date": "2026-09-06", "week": "Semana 4", "title": "Long Run", "type": "run", "details": ["12–16 km Z2", "Escolher distância pela recuperação do sábado"]}, {"date": "2026-09-07", "week": "Semana 5 — Peak", "title": "VO₂ Max", "type": "run", "details": ["2 km aquecimento", "5×1 km @ 4:15–4:20/km", "Recuperação 2 min", "2 km cooldown"]}, {"date": "2026-09-08", "week": "Semana 5 — Peak", "title": "Força reduzida", "type": "strength", "details": ["Deadlift: 3×4", "Front Squat: 3×4", "Sled Push: 3×20 m", "Sled Pull: 3×20 m", "Farmer Carry: 3×50 m", "Wall Balls: 3×20", "Nada próximo da falha"]}, {"date": "2026-09-09", "week": "Semana 5 — Peak", "title": "Corrida fácil Z2", "type": "run", "details": ["8–10 km Z2", "Muito confortável"]}, {"date": "2026-09-10", "week": "Semana 5 — Peak", "title": "Threshold", "type": "run", "details": ["2 km warm-up", "6 km @ 4:30–4:35/km", "2 km cooldown"]}, {"date": "2026-09-11", "week": "Semana 5 — Peak", "title": "Descanso", "type": "recovery", "details": ["OFF", "Mobilidade muito leve se necessário"]}, {"date": "2026-09-12", "week": "Semana 5 — Peak", "title": "SIMULAÇÃO PRINCIPAL HYROX", "type": "hyrox", "details": ["HYROX completo", "Run 1: 4:35", "Run 2: 4:35", "Run 3: 4:30", "Run 4: 4:30", "Run 5: 4:25–4:30", "Run 6: 4:25", "Run 7: 4:20–4:25", "Run 8: máximo controlado", "Registar splits de corrida, estações, transições e FC"]}, {"date": "2026-09-13", "week": "Semana 5 — Peak", "title": "Recuperação", "type": "recovery", "details": ["8–10 km muito fácil OU descanso total", "Escolher com base na fadiga da simulação"]}, {"date": "2026-09-14", "week": "Semana 6 — Taper", "title": "VO₂ manutenção", "type": "run", "details": ["2 km aquecimento", "4×800 m @ 4:15–4:20/km", "Recuperação: 2 min", "Cooldown"]}, {"date": "2026-09-15", "week": "Semana 6 — Taper", "title": "HYROX Strength Maintenance", "type": "strength", "details": ["Deadlift: 3×3 @ RPE 6–7", "Front Squat: 3×3", "Sled Push: 3×15 m carga competição", "Sled Pull: 3×15 m", "Farmer Carry: 2×50 m", "Wall Balls: 2×15", "Tudo rápido e limpo"]}, {"date": "2026-09-16", "week": "Semana 6 — Taper", "title": "Corrida fácil Z2", "type": "run", "details": ["8–10 km Z2", "Confortável"]}, {"date": "2026-09-17", "week": "Semana 6 — Taper", "title": "Threshold curto", "type": "run", "details": ["2 km warm-up", "5 km @ 4:30–4:35/km", "1–2 km cooldown"]}, {"date": "2026-09-18", "week": "Semana 6 — Taper", "title": "Descanso", "type": "recovery", "details": ["OFF", "Mobilidade leve"]}, {"date": "2026-09-19", "week": "Semana 6 — Taper", "title": "Último HYROX", "type": "hyrox", "details": ["3 rondas", "1 km @ 4:20–4:25 → 500 m SkiErg", "500 m @ 4:20 → 25 m Sled Push", "500 m @ 4:20 → 15 Wall Balls", "Recuperação: 3 min entre rondas", "Terminar com sensação de que conseguias fazer mais 1 ronda"]}, {"date": "2026-09-20", "week": "Semana 6 — Taper", "title": "Corrida muito fácil", "type": "run", "details": ["8–10 km muito fácil", "Sem progressão final"]}, {"date": "2026-09-21", "week": "Race Week", "title": "Z2 + Strides", "type": "run", "details": ["6 km Z2", "4×100 m progressivos"]}, {"date": "2026-09-22", "week": "Race Week", "title": "Ativação rápida", "type": "run", "details": ["2 km aquecimento", "4×400 m @ 3:55–4:05/km", "Recuperação completa 2 min", "2×10 Wall Balls", "2×10 m Sled Push leve", "2×10 m Sled Pull leve"]}, {"date": "2026-09-23", "week": "Race Week", "title": "Corrida muito fácil", "type": "run", "details": ["5 km @ 5:40–6:00/km", "Mobilidade leve"]}, {"date": "2026-09-24", "week": "Race Week", "title": "Descanso", "type": "recovery", "details": ["OFF", "Caminhar e mobilidade muito leve"]}, {"date": "2026-09-25", "week": "Race Week", "title": "Shakeout", "type": "run", "details": ["15–20 min corrida extremamente fácil", "3×60 m progressivos", "5 burpees", "10 air squats", "Terminar fresco"]}, {"date": "2026-09-26", "week": "Race Week", "title": "PROVA HYROX", "type": "race", "details": ["Run 1: 4:30–4:35", "Run 2: 4:25–4:30", "Run 3: 4:25", "Run 4: 4:20–4:25", "Run 5: 4:20–4:25", "Run 6: 4:20", "Run 7: 4:20", "Run 8: tudo o que resta", "Objetivo: controlar primeira metade e acelerar progressivamente"]}];
+const locale='pt-PT';
+
+function key(d){ return 'hyrox_done_'+d; }
+function isDone(d){ return localStorage.getItem(key(d))==='1'; }
+function toggleDone(d){
+  localStorage.setItem(key(d), isDone(d)?'0':'1');
+  render();
+}
+function fmtDate(s){
+  const d=new Date(s+'T12:00:00');
+  return d.toLocaleDateString(locale,{weekday:'long',day:'numeric',month:'long'});
+}
+function dow(s){ return new Date(s+'T12:00:00').toLocaleDateString(locale,{weekday:'short'}).replace('.',''); }
+function dom(s){ return new Date(s+'T12:00:00').getDate(); }
+
+function todayISO(){
+  const now=new Date();
+  const y=now.getFullYear(), m=String(now.getMonth()+1).padStart(2,'0'), d=String(now.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+function workoutCard(w, today=false){
+  if(!w) return `<div class="today-card"><div class="workout-title">Sem treino planeado</div><div class="note">Usa a vista Plano para consultar todas as sessões.</div></div>`;
+  const done=isDone(w.date);
+  return `<div class="${today?'today-card':'card'} ${w.type==='race'?'race':''}">
+    <div class="row"><span class="badge">${w.week}</span><span class="badge">${w.type.toUpperCase()}</span></div>
+    <div class="bigdate">${fmtDate(w.date)}</div>
+    <div class="workout-title">${w.title}</div>
+    <ul>${w.details.map(x=>`<li>${x}</li>`).join('')}</ul>
+    <button class="complete ${done?'done':''}" onclick="toggleDone('${w.date}')">${done?'✓ Treino concluído':'Marcar como concluído'}</button>
+  </div>`;
+}
+function showToday(){
+  document.getElementById('todayView').classList.remove('hidden');
+  document.getElementById('calendarView').classList.add('hidden');
+  document.getElementById('btnToday').classList.add('active');
+  document.getElementById('btnPlan').classList.remove('active');
+}
+function showPlan(){
+  document.getElementById('todayView').classList.add('hidden');
+  document.getElementById('calendarView').classList.remove('hidden');
+  document.getElementById('btnPlan').classList.add('active');
+  document.getElementById('btnToday').classList.remove('active');
+}
+function openWorkout(date){
+  const w=PLAN.find(x=>x.date===date);
+  document.getElementById('todayView').innerHTML=workoutCard(w,true);
+  showToday();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function render(){
+  const t=todayISO();
+  const w=PLAN.find(x=>x.date===t);
+  document.getElementById('todayView').innerHTML=workoutCard(w,true);
+  const groups={};
+  PLAN.forEach(x=>{(groups[x.week]??=[]).push(x)});
+  let html='';
+  Object.entries(groups).forEach(([week,items])=>{
+    html+=`<div class="card"><div class="week-title">${week}</div>`;
+    items.forEach(x=>{
+      html+=`<div class="day" onclick="openWorkout('${x.date}')">
+        <div><div class="dow">${dow(x.date)}</div><div class="dom">${dom(x.date)}</div></div>
+        <div><div class="daytitle">${x.title}</div><div class="daymeta">${x.details[0]}</div></div>
+        <div class="check">${isDone(x.date)?'✓':'›'}</div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  document.getElementById('calendarView').innerHTML=html;
+
+  const done=PLAN.filter(x=>isDone(x.date)).length;
+  document.getElementById('progress').style.width=(done/PLAN.length*100)+'%';
+}
+render();
+
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
